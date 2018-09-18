@@ -29,7 +29,7 @@ docker run \
 docker run \
 		   --name oracle \
 		   -p1521:1521 \
-		   -it --rm \
+		   -d --rm \
 		   -v /path/to/sql/file:/docker-entrypoint-initdb.d \
 		   oracle-test
 
