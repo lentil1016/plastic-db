@@ -1,0 +1,10 @@
+FROM wnameless/oracle-xe-11g
+ADD ./oracle.sql /opt
+ENV ORACLE_HOME /u01/app/oracle/product/11.2.0/xe
+ENV PATH $ORACLE_HOME/bin:$PATH
+ENV ORACLE_SID XE
+RUN apt install locales && locale-gen zh_CN.UTF-8 zh_CN.GBK
+RUN localedef -f GBK -i zh_CN zh_CN.GBK && localedef -f UTF-8 -i zh_CN zh_CN.UTF-8
+ENV LC_ALL zh_CN.UTF-8
+ENV NLS_LANG AMERICAN_AMERICA.ZHS16CGB231280
+RUN /usr/sbin/startup.sh && /u01/app/oracle/product/11.2.0/xe/bin/sqlplus SYS/oracle AS SYSDBA @/opt/oracle.sql
