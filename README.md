@@ -10,7 +10,7 @@ SHOULD ONLY be used in Testing!
 |mysql|`mysql -uroot -hmysql -pmysql`|
 |oracle|`sqlplus system/oracle@oracle/xe`|
 
-```
+```shell
 git clone https://github.com/Lentil1016/plastic-db.git
 
 # build plastic databases
