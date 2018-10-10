@@ -1,0 +1,243 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-node1-service
+  namespace: KUBE_NAMESPACE
+  labels:
+    name: redis
+    node: node1
+spec:
+  ports:
+    - port: 6379
+  selector:
+    name: redis
+    node: node1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-node2-service
+  namespace: KUBE_NAMESPACE
+  labels:
+    name: redis
+    node: node2
+spec:
+  type: NodePort
+  ports:
+    - port: 6379
+  selector:
+    name: redis
+    node: node2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-node3-service
+  namespace: KUBE_NAMESPACE
+  labels:
+    name: redis
+    node: node3
+spec:
+  ports:
+    - port: 6379
+  selector:
+    name: redis
+    node: node3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: redis-1
+    role: service
+  name: redis-1
+  namespace: KUBE_NAMESPACE
+spec:
+  ports:
+    - port: 27379
+      targetPort: 26379
+  selector:
+    redis-sentinel: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: redis-2
+    role: service
+  name: redis-2
+  namespace: KUBE_NAMESPACE
+spec:
+  ports:
+    - port: 27379
+      targetPort: 26379
+  selector:
+    redis-sentinel: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: redis-3
+    role: service
+  name: redis-3
+  namespace: KUBE_NAMESPACE
+spec:
+  ports:
+    - port: 27379
+      targetPort: 26379
+  selector:
+    redis-sentinel: "true"
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: redis-node1
+  namespace: KUBE_NAMESPACE
+  labels:
+    name: redis
+    node: node1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: redis
+        node: node1
+    spec:
+      containers:
+      - name: redis
+        image: harbor.io/ccod45/redis:0.0.3
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - mountPath: /data
+          name: redis-data
+        - mountPath: /cfg
+          name: cfg
+        env:
+          - name: MASTER
+            value: "1"
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+      - name: cfg
+        configMap:
+          name: redis-conf
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: redis-node2
+  namespace: KUBE_NAMESPACE
+  labels:
+    name: redis
+    node: node2
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: redis
+        node: node2
+    spec:
+      containers:
+      - name: redis
+        image: harbor.io/ccod45/redis:0.0.3
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - mountPath: /data
+          name: redis-data
+        - mountPath: /cfg
+          name: cfg
+        env:
+        - name: MASTER_ADDRESS
+          value: "redis-node1-service"
+        - name: ANNOUNCE_IP
+          value: "redis-node2-service"
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+      - name: cfg
+        configMap:
+          name: redis-conf
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: redis-node3
+  namespace: KUBE_NAMESPACE
+  labels:
+    name: redis
+    node: node3
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: redis
+        node: node3
+    spec:
+      containers:
+      - name: redis
+        image: harbor.io/ccod45/redis:0.0.3
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - mountPath: /data
+          name: redis-data
+        - mountPath: /cfg
+          name: cfg
+        env:
+        - name: MASTER_ADDRESS
+          value: "redis-node1-service"
+        - name: ANNOUNCE_IP
+          value: "redis-node3-service"
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+      - name: cfg
+        configMap:
+          name: redis-conf
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: redis-sentinel
+  namespace: KUBE_NAMESPACE
+  labels:
+    name: redis-sentinel
+    redis-sentinel: "true"
+    role: sentinel
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        name: redis-sentinel
+        redis-sentinel: "true"
+        role: sentinel
+    spec:
+      containers:
+      - name: sentinel
+        image: harbor.io/ccod45/redis:0.0.3
+        env:
+          - name: SENTINEL
+            value: "1"
+          - name: MASTER_IP
+            value: "redis-node1-service"
+          - name: ANNOUNCE_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        volumeMounts:
+        - mountPath: /cfg
+          name: cfg
+        ports:
+          - containerPort: 26379
+      volumes:
+      - name: cfg
+        configMap:
+          name: redis-conf
