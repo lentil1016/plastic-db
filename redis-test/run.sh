@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 
-set -e
-
 #$1 - parameter; $2 - value; $3 - default value; $4 - file;
 Template() {             
 	[[ -z "$2" ]] &&  sed -i "s/{{ $1 }}/$3/g" $4 || sed -i "s/{{ $1 }}/$2/g" $4
 }
 
 if [ -z "$LOCAL_IP" ]; then
-	LOCAL_IP=`ip addr|grep -v 127.0.0.1|grep inet|awk '{print $2}'|awk -F '/' '{print $1}'`
+	LOCAL_IP=`ip addr|grep -vE '127.0.0.1|inet6'|grep inet|awk '{print $2}'|awk -F '/' '{print $1}'`
 fi
 
 for role in 1 2 3; do
