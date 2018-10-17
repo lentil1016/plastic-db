@@ -1,10 +1,12 @@
 #!/bin/bash
 
+chown -R mysql:mysql /var/lib/mysql /var/run/mysqld
+
 exec gosu mysql mysqld --skip-networking --socket="/var/run/mysqld/mysqld.sock" 2>&1 >/dev/null &
 pid=$!
 
 SOCKET="/var/run/mysqld/mysqld.sock"
-mysql="mysql --protocol=socket -uroot -hlocalhost -pucds --socket=${SOCKET}"
+mysql="mysql --protocol=socket -uroot -hlocalhost -p${MYSQL_ROOT_PASSWORD} --socket=${SOCKET}"
 
 for i in {30..0}; do
 	if echo 'SELECT 1' | ${mysql} &> /dev/null; then
@@ -32,5 +34,5 @@ if ! kill -s TERM "$pid" || ! wait "$pid"; then
 	exit 1
 fi
 
-exec gosu mysql mysqld
+exec gosu mysql mysqld &
 

@@ -67,9 +67,9 @@ RUN sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/mysql.conf.d/mysqld.cnf \
 ADD ./setup.sh /usr/local/bin/
 
 EXPOSE 3306
-CMD ["mysqld"]
 
 ENV MYSQL_ROOT_PASSWORD mysql
 RUN MYSQL_ROOT_PASSWORD=mysql setup.sh mysqld
 ADD ./entrypoint.sh /usr/local/bin/
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "-c"]
+CMD ["entrypoint.sh mysqld && tail -f /dev/null"]
